@@ -7,7 +7,7 @@ package main
 //
 
 import "fmt"
-import "../mr"
+import "mit6.824/mr"
 import "plugin"
 import "os"
 import "log"
@@ -95,12 +95,12 @@ func loadPlugin(filename string) (func(string, string) []mr.KeyValue, func(strin
 	if err != nil {
 		log.Fatalf("cannot load plugin %v", filename)
 	}
-	xmapf, err := p.Lookup("Map")
+	xmapf, err := p.Lookup("Map_WC")
 	if err != nil {
 		log.Fatalf("cannot find Map in %v", filename)
 	}
 	mapf := xmapf.(func(string, string) []mr.KeyValue)
-	xreducef, err := p.Lookup("Reduce")
+	xreducef, err := p.Lookup("Reduce_WC")
 	if err != nil {
 		log.Fatalf("cannot find Reduce in %v", filename)
 	}

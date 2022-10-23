@@ -6,7 +6,7 @@ package main
 // go build -buildmode=plugin wc.go
 //
 
-import "../mr"
+import "mit6.824/mr"
 import "unicode"
 import "strings"
 import "strconv"
@@ -18,7 +18,7 @@ import "strconv"
 // and look only at the contents argument. The return value is a slice
 // of key/value pairs.
 //
-func Map(filename string, contents string) []mr.KeyValue {
+func Map_WC(filename string, contents string) []mr.KeyValue {
 	// function to detect word separators.
 	ff := func(r rune) bool { return !unicode.IsLetter(r) }
 
@@ -38,7 +38,7 @@ func Map(filename string, contents string) []mr.KeyValue {
 // map tasks, with a list of all the values created for that key by
 // any map task.
 //
-func Reduce(key string, values []string) string {
+func Reduce_WC(key string, values []string) string {
 	// return the number of occurrences of this word.
 	return strconv.Itoa(len(values))
 }
