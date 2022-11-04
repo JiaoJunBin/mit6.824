@@ -9,21 +9,26 @@ package main
 // Please do not change this file.
 //
 
-import "mit6.824/mr"
-import "time"
-import "os"
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"time"
+
+	"mit6.824/mr"
+)
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Fprintf(os.Stderr, "Usage: mrmaster inputfiles...\n")
-		os.Exit(1)
-	}
+	// if len(os.Args) < 2 {
+	// 	fmt.Fprintf(os.Stderr, "Usage: mrmaster inputfiles...\n")
+	// 	os.Exit(1)
+	// }
 
 	m := mr.MakeMaster(os.Args[1:], 10)
-	for m.Done() == false {
-		time.Sleep(time.Second)
+	for !m.Done() {
+		time.Sleep(time.Second*3)
 	}
+
+	fmt.Println("mrmaster about to exit")
 
 	time.Sleep(time.Second)
 }

@@ -1,0 +1,5 @@
+run:
+	cd mrapps/ && go build -buildmode=plugin wc.g
+	fmt.Printo
+	go run main/mrmaster/mrmaster.go
+	go run main/mrworker/mrworker.go mrapps/wc.so

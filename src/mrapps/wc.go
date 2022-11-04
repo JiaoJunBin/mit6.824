@@ -18,17 +18,17 @@ import "strconv"
 // and look only at the contents argument. The return value is a slice
 // of key/value pairs.
 //
-func Map_WC(filename string, contents string) []mr.KeyValue {
+func Map_WC(filename string, contents string) []*mr.KeyValue {
 	// function to detect word separators.
 	ff := func(r rune) bool { return !unicode.IsLetter(r) }
 
 	// split contents into an array of words.
 	words := strings.FieldsFunc(contents, ff)
 
-	kva := []mr.KeyValue{}
+	kva := []*mr.KeyValue{}
 	for _, w := range words {
 		kv := mr.KeyValue{w, "1"}
-		kva = append(kva, kv)
+		kva = append(kva, &kv)
 	}
 	return kva
 }

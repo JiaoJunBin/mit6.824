@@ -10,11 +10,14 @@ package main
 // Please do not change this file.
 //
 
-import "mit6.824/mr"
-import "plugin"
-import "os"
-import "fmt"
-import "log"
+import (
+	"fmt"
+	"log"
+	"os"
+	"plugin"
+
+	"mit6.824/mr"
+)
 
 func main() {
 	if len(os.Args) != 2 {
@@ -24,24 +27,23 @@ func main() {
 
 	mapf, reducef := loadPlugin(os.Args[1])
 
-	mr.Worker(mapf, reducef)
+	mr.MakeWorker(mapf, reducef)
 }
 
-//
 // load the application Map and Reduce functions
 // from a plugin file, e.g. ../mrapps/wc.so
-//
-func loadPlugin(filename string) (func(string, string) []mr.KeyValue, func(string, []string) string) {
+func loadPlugin(filename string) (func(string, string) []*mr.KeyValue, func(string, []string) string) {
 	p, err := plugin.Open(filename)
 	if err != nil {
+		log.Println(err)
 		log.Fatalf("cannot load plugin %v", filename)
 	}
-	xmapf, err := p.Lookup("Map")
+	xmapf, err := p.Lookup("Map_WC")
 	if err != nil {
 		log.Fatalf("cannot find Map in %v", filename)
 	}
-	mapf := xmapf.(func(string, string) []mr.KeyValue)
-	xreducef, err := p.Lookup("Reduce")
+	mapf := xmapf.(func(string, string) []*mr.KeyValue)
+	xreducef, err := p.Lookup("Reduce_WC")
 	if err != nil {
 		log.Fatalf("cannot find Reduce in %v", filename)
 	}
