@@ -2,7 +2,7 @@ package mr
 
 import "sync"
 
-var Dir = "/home/junbin/Documents/mit6.824/src/main/"
+var Dir = "/home/junbin/mit6.824/src/main/"
 
 type Master struct {
 	// Your definitions here.
