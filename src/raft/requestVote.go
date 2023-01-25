@@ -38,18 +38,21 @@ type RequestVoteReply struct {
 func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	// Your code here (2A, 2B).
 	rf.resetTicker()
-	fmt.Printf("%d ask %d to vote, with term %d\n", args.CandidateId, rf.me, args.Term)
+	// fmt.Printf("%d ask %d to vote, with term %d\n", args.CandidateId, rf.me, args.Term)
+	// Reply false if term < currentTerm
 	if args.Term < rf.CurrentTerm {
 		reply.Term = rf.CurrentTerm
 		reply.VoteGranted = false
 		return
-	} else if args.Term == rf.CurrentTerm {
+	} else if args.Term == rf.CurrentTerm { // avoid double vote
+		// If votedFor is null or candidateId,
+		//and candidate’s log is at least as up-to-date as receiver’s log, grant vote
 		if rf.VotedFor == -1 || rf.VotedFor == args.CandidateId {
 			if args.LastLogTerm >= rf.logTerm() && args.LastLogIndex >= len(rf.Log) {
 				rf.VotedFor = args.CandidateId
 				reply.VoteGranted = true
 				rf.CurrentTerm = args.Term
-				fmt.Printf("%d voted for %d, and changed to term %d\n", rf.me, args.CandidateId, rf.CurrentTerm)
+				// fmt.Printf("%d voted for %d, and changed to term %d\n", rf.me, args.CandidateId, rf.CurrentTerm)
 			}
 		}
 	} else {
@@ -57,7 +60,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 			rf.VotedFor = args.CandidateId
 			reply.VoteGranted = true
 			rf.CurrentTerm = args.Term
-			fmt.Printf("%d voted for %d, and changed to term %d\n", rf.me, args.CandidateId, rf.CurrentTerm)
+			// fmt.Printf("%d voted for %d, and changed to term %d\n", rf.me, args.CandidateId, rf.CurrentTerm)
 		}
 	}
 }
@@ -148,13 +151,39 @@ func (rf *Raft) startElection() {
 }
 
 func (rf *Raft) becomeLeader() {
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
 	rf.State = 0
 	fmt.Printf("%d become leader\n", rf.me)
+	// Upon election: send initial empty AppendEntries RPCs (heartbeat) to each server;
+	// repeat during idle periods to prevent election timeouts
 	go rf.heartBeat()
+
+	rf.reinitVolatileState()
+}
+
+// Reinitialized after election
+func (rf *Raft) reinitVolatileState() {
+	for i := range rf.peers {
+		fmt.Printf("re-initing\n")
+		if len(rf.NextIndex) <= i {
+			rf.NextIndex = append(rf.NextIndex, len(rf.Log)+1)
+			rf.MatchIndex = append(rf.MatchIndex, 0)
+		} else {
+			rf.NextIndex[i] = len(rf.Log) + 1
+			rf.MatchIndex[i] = 0
+		}
+
+	}
 }
 
 func (rf *Raft) becomeFollower() {
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
 	rf.State = 1
+	rf.StopHeartBeat <- true
+	fmt.Printf("%d become follower\n", rf.me)
+
 }
 
 func (rf *Raft) resetTicker() {

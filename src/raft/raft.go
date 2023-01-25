@@ -53,7 +53,7 @@ type ApplyMsg struct {
 }
 
 type logEntry struct {
-	Command string
+	Command interface{}
 	Term    int
 }
 
@@ -73,7 +73,8 @@ type Raft struct {
 
 	State          int           // 0: leader, 1: follwer, 2: candidate
 	ElectionTicker *time.Ticker  // to support vote
-	ApplyCh        chan ApplyMsg //
+	ApplyCh        chan ApplyMsg // to apply command
+	StopHeartBeat  chan bool     // to stop heartbeat when no longer leader
 
 	// Persistent state on all servers:
 	CurrentTerm int         // latest term server has seen (initialized to 0 on first boot, increases monotonically)
@@ -95,7 +96,11 @@ type Raft struct {
 func (rf *Raft) GetState() (int, bool) {
 
 	// Your code here (2A).
-	return rf.CurrentTerm, rf.State == 0
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+	term := rf.CurrentTerm
+	state := rf.State
+	return term, state == 0
 }
 
 //
@@ -154,10 +159,31 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	index := len(rf.Log) + 1
 
 	// Your code here (2B).
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
 	isLeader := rf.State == 0
 	if rf.killed() {
 		isLeader = false
 	}
+	if !isLeader {
+		return index, rf.CurrentTerm, isLeader
+	}
+
+	// If command received from client: append entry to local log, respond after entry applied to state machine
+	entry := &logEntry{
+		Term:    rf.CurrentTerm,
+		Command: command,
+	}
+	rf.Log = append(rf.Log, entry)
+	// fmt.Printf("%d append command, term: %d, log index: %d, command is %v\n",
+	// 	rf.me, rf.CurrentTerm, len(rf.Log), command)
+
+	rf.MatchIndex[rf.me] = len(rf.Log)
+	rf.NextIndex[rf.me] = rf.MatchIndex[rf.me] + 1
+
+	go rf.startAggrement()
+	go rf.leaderCheckCommit()
+
 	return index, rf.CurrentTerm, isLeader
 }
 
@@ -207,6 +233,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.Log = make([]*logEntry, 0)
 	rf.CommitIndex = 0
 	rf.LastApplied = 0
+
 	rf.State = 1
 	// initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
