@@ -1,2 +1,2 @@
 # mit6.824
-labs of mit 6.824
+implementaion of RAFT algorithm
